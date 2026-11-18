@@ -155,6 +155,11 @@ select{background:#fff;border:1.5px solid var(--line2);color:#111;border-radius:
   .leaflet-bottom{bottom:calc(46dvh + 6px)}
 }
 .grab{display:none;width:48px;height:5px;background:#999;border-radius:3px;margin:8px auto 0;cursor:pointer;border:0;padding:0}
+
+.mapsel{display:flex;align-items:center;gap:8px;margin-top:10px}
+.mapsel .seg button{font-size:15px;padding:6px 16px}
+.detrow{display:none;align-items:center;justify-content:space-between;gap:8px}
+.detrow.show{display:flex}
 </style>
 </head>
 <body>
@@ -165,13 +170,14 @@ select{background:#fff;border:1.5px solid var(--line2);color:#111;border-radius:
       <div class="row">
         <span class="lbl">지도</span>
         <div class="seg" id="baseSeg">
-          <button data-v="1">네이버</button><button data-v="0.5">섞기</button><button data-v="0">최신</button>
+          <button data-v="1">상세</button><button data-v="0.5">섞기</button><button data-v="0">최신</button>
         </div>
         <button class="ob toggleCtl" id="ctlMore">옵션</button>
       </div>
-      <div class="hint" id="naverHint">네이버 지도는 ⚙ 설정에서 GitHub 연결 후 보여</div>
+      <div class="detrow" id="detRow"><span class="lbl">상세지도</span><div class="seg" id="detSeg"></div></div>
+      <div class="hint" id="naverHint">상세지도는 ⚙ 설정에서 GitHub 연결 후 보여</div>
       <div class="more" style="display:flex;flex-direction:column;gap:9px">
-        <div><input type="range" id="blend" min="0" max="100" value="0" aria-label="네이버 지도 투명도"></div>
+        <div><input type="range" id="blend" min="0" max="100" value="0" aria-label="상세지도 투명도"></div>
         <div class="row">
           <label class="chk"><input type="checkbox" id="showExt" checked>탈출구</label>
           <label class="chk"><input type="checkbox" id="showAll" checked>남은 임무 전부</label>
@@ -179,13 +185,14 @@ select{background:#fff;border:1.5px solid var(--line2);color:#111;border-radius:
         <div class="legend"><span><i style="background:#3ad0ff"></i>PMC</span><span><i style="background:#ff9a3c"></i>스캐브</span><span><i style="background:#c47dff"></i>공용</span><span><i style="background:#fff"></i>지역이동</span></div>
       </div>
     </div>
-    <div class="mapnote" id="mapnote">네이버 지도는 2021년판이라 이후 생긴 건물·지형은 '최신'으로 확인</div>
+    <div class="mapnote" id="mapnote"></div>
   </div>
 
   <aside id="panel">
     <button class="grab" id="grab" aria-label="패널 크기 전환"></button>
     <div class="hdr">
-      <div class="brand"><h1>TARKOV OPS<span>삼림</span></h1><button class="gear" id="openSet">⚙ 설정</button></div>
+      <div class="brand"><h1>TARKOV OPS</h1><button class="gear" id="openSet">⚙ 설정</button></div>
+      <div class="mapsel"><div class="seg" id="mapSeg"></div></div>
       <div class="who"><label>나는</label><div class="seg" id="whoSeg"><button data-v="siyoon">시윤</button><button data-v="sewon">세원</button></div><span class="sync" id="sync"></span></div>
       <div class="src" id="src">임무 데이터 불러오는 중…</div>
     </div>
@@ -221,7 +228,7 @@ select{background:#fff;border:1.5px solid var(--line2);color:#111;border-radius:
 <div class="modal" id="setModal">
   <div class="card">
     <h2>설정 · GitHub 동기화</h2>
-    <p>완료 체크와 네이버 지도는 비공개 저장소에 보관돼. 토큰은 이 기기 브라우저에만 저장되고, 다른 곳으로는 보내지 않아.</p>
+    <p>완료 체크와 상세지도 이미지는 비공개 저장소에 보관돼. 토큰은 이 기기 브라우저에만 저장되고, 다른 곳으로는 보내지 않아.</p>
     <div class="fr">
       <div class="field"><label for="sOwner">GitHub 계정</label><input id="sOwner" autocomplete="off" spellcheck="false"></div>
       <div class="field"><label for="sRepo">데이터 저장소</label><input id="sRepo" autocomplete="off" spellcheck="false"></div>
@@ -244,41 +251,50 @@ const PEOPLE = { siyoon: '시윤', sewon: '세원' };
 const PAL = ['#ff5d5d','#ffb347','#ffe066','#7ee081','#5ec8ff','#b48bff','#ff7ad9','#4de3c8','#f4f4f4','#c0e05a'];
 const TRADER_ORDER = ['프라퍼','테라피스트','펜스','스키어','피스키퍼','메카닉','래그맨','예거','등대지기','레프','BTR 조종수'];
 const TRADER_COLOR = {'프라퍼':'#e8c15a','테라피스트':'#ff7a8a','펜스':'#9aa0a6','스키어':'#5ec8ff','피스키퍼':'#7ee081','메카닉':'#ffb347','래그맨':'#c49bff','예거':'#a3d977','등대지기':'#4de3c8','레프':'#ff9e6b','BTR 조종수':'#d4d4a0'};
-const WOODS_ID = '5704e3c2d2720bac5b8b4567';
 const API = 'https://json.tarkov.dev/regular/';
-const SVG_URL = 'https://assets.tarkov.dev/maps/svg/Woods.svg';
-const NAVER_FILE = 'woods_naver.png';
-
-// ---- map geometry (game x,z -> Leaflet [lat=z, lng=x]) ----
-const TDEV_BOUNDS = [[-914,-761],[442,646]];
-const BASE = {sx:0.7664458596497759, tx:758.5381873245077, sy:-0.7667215879310789, ty:372.7228795803782};
-const NAVER_W = 1516, NAVER_H = 1085;
-const NAVER_BOUNDS = [[(NAVER_H-BASE.ty)/BASE.sy, (0-BASE.tx)/BASE.sx], [(0-BASE.ty)/BASE.sy, (NAVER_W-BASE.tx)/BASE.sx]];
-// thin-plate spline: game (x,z)/100 -> naver pixel; fitted on 15 extract pins + sawmill dorms
-const TPS = {"c":[[3.49,3.586],[-3.892,0.11],[-5.357,2.87],[-5.179,1.492],[-5.094,-0.353],[-5.573,-0.67],[1.956,2.592],[1.766,2.159],[4.137,2.422],[4.472,0.575],[-2.103,-2.135],[2.204,-7.058],[-4.853,-5.041],[-1.422,4.224],[0.932,-8.44],[-0.062,-0.755]],"w":[[-0.68533,-5.97088],[4.32203,8.32007],[0.56712,1.91948],[-0.9551,-2.91492],[-13.25514,-21.85583],[9.98702,15.66006],[-3.33591,6.94977],[2.86255,-4.94102],[2.17542,5.87347],[-1.38457,-1.50992],[-1.1719,0.8059],[0.46577,-0.70523],[-0.20611,-0.85865],[0.12922,-0.12896],[-0.17595,0.79586],[0.66086,-1.43919]],"a":[[717.90527,349.83563],[74.1669,-2.96795],[-0.37312,-79.27033]]};
-function U(r){ return r > 0 ? r*r*Math.log(r) : 0; }
-function tps(x, z){
-  const gx = x/100, gz = z/100, a = TPS.a; let px = a[0][0] + a[1][0]*gx + a[2][0]*gz, py = a[0][1] + a[1][1]*gx + a[2][1]*gz;
-  for (let i=0;i<TPS.c.length;i++){ const dx = gx-TPS.c[i][0], dz = gz-TPS.c[i][1]; const u = U(Math.sqrt(dx*dx+dz*dz)); px += u*TPS.w[i][0]; py += u*TPS.w[i][1]; }
-  return [px, py];
-}
-let naverT = 0; // 1 = naver positions, 0 = raw tarkov.dev positions
-function proj(x, z){
-  if (naverT <= 0) return [z, x];
-  const [px, py] = tps(x, z); const nx = (px-BASE.tx)/BASE.sx, nz = (py-BASE.ty)/BASE.sy;
-  return [z + (nz-z)*naverT, x + (nx-x)*naverT];
-}
-
-const EXTRACTS = [
-  ['ZB-016','pmc',-389.2,11],['UN Roadblock','both',-535.7,287],['Old Railway Depot','scav',-517.9,149.2],['Scav House','scav',413.7,242.2],
-  ['Eastern Rocks','scav',-509.4,-35.3],['Mountain Stash','scav',-210.3,-213.5],['Power Line Passage (조명탄)','pmc',574,-85.3],['Outskirts','both',348.1,359.3],
-  ['Scav Bunker','scav',220.4,-705.8],['RUAF Roadblock','scav',-142.2,422.4],['RUAF Gate','pmc',-142.5,447.6],['ZB-014','pmc',447.2,57.5],
-  ["Dead Man's Place",'scav',195.6,259.2],['Friendship Bridge (Co-Op)','shared',93.2,-844],['The Boat','scav',176.6,215.9],['Railway Bridge to Tarkov','pmc',-730.4,129.3],
-  ['Northern UN Roadblock','pmc',-557.3,-67],['Bridge V-Ex','pmc',-485.3,-504.1],
-  ['→ 공장','transit',-362,361.2],['→ 리저브','transit',254.3,362.6],['→ 등대','transit',496,348.3],['→ 세관','transit',-150.4,403.4]
-];
 const EXT_COLOR = {pmc:'#3ad0ff', scav:'#ff9a3c', both:'#9fe0b0', shared:'#c47dff', transit:'#ffffff'};
-const AREAS = [[10,-3,'제재소'],[-485,-390,'스캐브 마을'],[-517,-210,'구 제재소'],[-80,-680,'컬티스트 마을'],[290,-475,'USEC 캠프'],[-188,235,'군사 캠프'],[-5,-515,'연못'],[-252,-37,'추락 지점'],[239,-65,'검문소'],[-327,19,'예거 캠프'],[85,-147,'저격 바위'],[200,-606,'호송대']];
+
+// ---- maps ----
+// disp(x,z) = [sz*z, sx*x] is the north-up Leaflet position of a game coordinate.
+// Each detail image: game (x,z) -> image pixel through a thin-plate spline fitted on extract pins,
+// and px = bx*lng + bxo, py = by*lat + byo places the image in display space.
+const MAPS = {
+  woods: {
+    id: '5704e3c2d2720bac5b8b4567', name: '삼림', svg: 'https://assets.tarkov.dev/maps/svg/Woods.svg', rotate: true, sx: 1, sz: 1,
+    tdev: [[-914,-761],[442,646]],
+    details: [{ key:'naver', label:'네이버', file:'woods_naver.png', w:1516, h:1085, base:[0.7664458596497759,758.5381873245077,-0.7667215879310789,372.7228795803782], tps:{"c":[[3.49,3.586],[-3.892,0.11],[-5.357,2.87],[-5.179,1.492],[-5.094,-0.353],[-5.573,-0.67],[1.956,2.592],[1.766,2.159],[4.137,2.422],[4.472,0.575],[-2.103,-2.135],[2.204,-7.058],[-4.853,-5.041],[-1.422,4.224],[0.932,-8.44],[-0.062,-0.755]],"w":[[-0.68533,-5.97088],[4.32203,8.32007],[0.56712,1.91948],[-0.9551,-2.91492],[-13.25514,-21.85583],[9.98702,15.66006],[-3.33591,6.94977],[2.86255,-4.94102],[2.17542,5.87347],[-1.38457,-1.50992],[-1.1719,0.8059],[0.46577,-0.70523],[-0.20611,-0.85865],[0.12922,-0.12896],[-0.17595,0.79586],[0.66086,-1.43919]],"a":[[717.90527,349.83563],[74.1669,-2.96795],[-0.37312,-79.27033]]},
+      note:'네이버 지도는 2021년판이라 이후 생긴 건물·지형은 \'최신\'으로 확인' }],
+    extracts: [
+      ['ZB-016','pmc',-389.2,11],['UN Roadblock','both',-535.7,287],['Old Railway Depot','scav',-517.9,149.2],['Scav House','scav',413.7,242.2],
+      ['Eastern Rocks','scav',-509.4,-35.3],['Mountain Stash','scav',-210.3,-213.5],['Power Line Passage (조명탄)','pmc',574,-85.3],['Outskirts','both',348.1,359.3],
+      ['Scav Bunker','scav',220.4,-705.8],['RUAF Roadblock','scav',-142.2,422.4],['RUAF Gate','pmc',-142.5,447.6],['ZB-014','pmc',447.2,57.5],
+      ["Dead Man's Place",'scav',195.6,259.2],['Friendship Bridge (Co-Op)','shared',93.2,-844],['The Boat','scav',176.6,215.9],['Railway Bridge to Tarkov','pmc',-730.4,129.3],
+      ['Northern UN Roadblock','pmc',-557.3,-67],['Bridge V-Ex','pmc',-485.3,-504.1],
+      ['→ 공장','transit',-362,361.2],['→ 리저브','transit',254.3,362.6],['→ 등대','transit',496,348.3],['→ 세관','transit',-150.4,403.4]
+    ],
+    areas: [[10,-3,'제재소'],[-485,-390,'스캐브 마을'],[-517,-210,'구 제재소'],[-80,-680,'컬티스트 마을'],[290,-475,'USEC 캠프'],[-188,235,'군사 캠프'],[-5,-515,'연못'],[-252,-37,'추락 지점'],[239,-65,'검문소'],[-327,19,'예거 캠프'],[85,-147,'저격 바위'],[200,-606,'호송대']]
+  },
+  shoreline: {
+    id: '5704e554d2720bac5b8b456e', name: '해안선', svg: 'https://assets.tarkov.dev/maps/svg/Shoreline.svg', rotate: false, sx: -1, sz: -1,
+    tdev: [[-618,-504],[415,1056]],
+    details: [
+      { key:'2d', label:'2D 한글', file:'shoreline_2d.png', w:1549, h:869, base:[0.7947464617096545,588.3398789720882,-0.7400849584295233,366.98858483971026], tps:{"c":[[4.489,-2.546],[4.778,-0.668],[4.614,1.206],[3.764,3.193],[3.666,3.325],[-2.569,-1.498],[-2.969,-1.009],[-8.59,0.005],[-10.25,2.977],[-8.558,4.768],[-3.359,5.641],[-4.581,5.673]],"w":[[-2.44586,1.72681],[3.05862,-1.25869],[2.29546,1.81968],[-52.24303,-40.91195],[49.52017,39.33677],[2.69554,-5.37091],[-2.4105,4.74856],[-0.17378,0.51316],[1.02287,-0.69408],[-1.33387,0.56276],[-1.40231,-0.08357],[1.4167,-0.38855]],"a":[[610.08287,342.14349],[-81.35851,3.74216],[4.01545,73.65706]]},
+        note:'2D 한글 지도는 0.12.8 버전이라 북쪽 산악 지역 등 이후 바뀐 곳은 \'최신\'으로 확인' },
+      { key:'3d', label:'3D', file:'shoreline_3d.png', w:1044, h:553, base:[0.6043940400745325,377.83358838284806,-0.4126125618745525,234.72909299157334], tps:{"c":[[4.489,-2.546],[4.778,-0.668],[4.614,1.206],[3.764,3.193],[3.666,3.325],[-2.569,-1.498],[-2.969,-1.009],[-8.59,0.005],[-10.25,2.977],[-8.558,4.768],[-3.359,5.641],[-4.581,5.673]],"w":[[4.49802,-1.55055],[-5.93874,2.72786],[2.22967,1.18015],[-8.19838,-42.44684],[7.90224,40.38631],[-3.32472,0.10678],[2.65981,-0.23199],[-0.46703,0.24345],[0.49233,0.19878],[-0.12667,-0.53916],[0.28164,-0.85699],[-0.00818,0.78219]],"a":[[270.05357,243.50381],[-59.20186,-0.46482],[-6.98158,42.61108]]},
+        note:'3D 지도는 입체라 높은 건물·산 근처에서는 핀이 조금 어긋날 수 있어' }
+    ],
+    extracts: [
+      ['Path to Lighthouse','pmc',448.9,-254.6],['Ruined House Fence','scav',477.8,-66.8],['Svetliy Dead End','scav',461.4,120.6],['Tunnel','pmc',376.4,319.3],
+      ['Ruined Road','scav',366.6,332.5],['Admin Basement','scav',-256.9,-149.8],['RWing Gym Entrance','scav',-296.9,-100.9],['Road to Customs','both',-859,0.5],
+      ['Railway Bridge','pmc',-1025,297.7],['CCP Temporary','pmc',-855.8,476.8],['Pier Boat','pmc',-335.9,564.1],['Lighthouse (등대)','scav',-458.1,567.3],
+      ["Climber's Trail",'pmc',-214.3,-361.8],['Rock Passage','pmc',-200.8,-358.3],['Cliff Descent','pmc',-196.1,-360],['Mountain Bunker','pmc',-391,-385.7],
+      ['Road to North V-Ex','pmc',-543.1,-378.6],["Smuggler's Path (Co-op)",'shared',-729.4,-255.1],
+      ['→ 등대','transit',416.8,-214.1],['→ 터미널','transit',-965.6,373.8],['→ 미궁','transit',-195.1,-82.9],['→ 쇄빙선','transit',-315.7,525.7]
+    ],
+    areas: [[-258.2,-71.2,'리조트'],[-215.8,178.4,'변전소'],[-189.3,420,'주유소'],[-496,257,'기상관측소'],[-708.9,93.9,'라디오 타워'],[326,-118.5,'늪지대'],[418.4,118,'빌리지'],[288,144,'오두막'],[128,93,'코테지'],[-355,188,'탱크 다리'],[-338.6,525,'선착장'],[216,424,'스캐브 섬'],[-96,-6,'버스 정류장'],[52,134,'공사장'],[-153,-290,'벙커'],[-625,484,'크레인'],[-622,-202,'스캐브 농장']]
+  }
+};
+const MAP_KEYS = Object.keys(MAPS);
 
 // ---- helpers ----
 const $ = id => document.getElementById(id);
@@ -287,9 +303,14 @@ const LS = {
   get(k, d){ try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch(e){ return d; } },
   set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
 };
+const fmtDate = ts => { const d = new Date(ts); return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
 
 // ---- state ----
+let mapKey = LS.get('tk_map', 'woods'); if (!MAPS[mapKey]) mapKey = 'woods';
+let M = MAPS[mapKey];
+let DATA = {};               // mapKey -> { tasks, reqNames }
 let TASKS = [], REQN = {}, byId = {};
+let dataLabel = '';
 const store = LS.get('tk_progress', null) || { siyoon:{tasks:{},objs:{}}, sewon:{tasks:{},objs:{}} };
 for (const p of Object.keys(PEOPLE)) { store[p] = store[p] || {}; store[p].tasks = store[p].tasks || {}; store[p].objs = store[p].objs || {}; }
 const dirty = LS.get('tk_dirty', null) || { siyoon:{tasks:{},objs:{}}, sewon:{tasks:{},objs:{}} };
@@ -301,59 +322,109 @@ const tDone = (p, id) => !!store[p].tasks[id];
 const oDone = (p, id) => !!store[p].objs[id];
 const nameOf = t => t.ko || t.en;
 
+// ---- projection ----
+let naverT = 0;          // 0 = raw tarkov.dev positions, 1 = positions on the detail image
+let DET = null;          // active detail entry of the current map (null if none loaded)
+function U(r){ return r > 0 ? r*r*Math.log(r) : 0; }
+function tps(T, x, z){
+  const gx = x/100, gz = z/100, a = T.a; let px = a[0][0] + a[1][0]*gx + a[2][0]*gz, py = a[0][1] + a[1][1]*gx + a[2][1]*gz;
+  for (let i=0;i<T.c.length;i++){ const dx = gx-T.c[i][0], dz = gz-T.c[i][1]; const u = U(Math.sqrt(dx*dx+dz*dz)); px += u*T.w[i][0]; py += u*T.w[i][1]; }
+  return [px, py];
+}
+const disp = (x, z) => [M.sz*z, M.sx*x];
+function detBounds(d){
+  const [bx, bxo, by, byo] = d.base;
+  const lngA = (0-bxo)/bx, lngB = (d.w-bxo)/bx, latA = (0-byo)/by, latB = (d.h-byo)/by;
+  return [[Math.min(latA,latB), Math.min(lngA,lngB)], [Math.max(latA,latB), Math.max(lngA,lngB)]];
+}
+function proj(x, z){
+  const raw = disp(x, z);
+  if (naverT <= 0 || !DET) return raw;
+  const [bx, bxo, by, byo] = DET.base; const [px, py] = tps(DET.tps, x, z);
+  const lat = (py-byo)/by, lng = (px-bxo)/bx;
+  return [raw[0] + (lat-raw[0])*naverT, raw[1] + (lng-raw[1])*naverT];
+}
+
 // ---- map ----
 const map = L.map('map', { crs: L.CRS.Simple, minZoom: -2, maxZoom: 2, zoomSnap: 0.25, zoomDelta: 0.5, attributionControl: false });
 map.zoomControl.setPosition('bottomright');
-map.fitBounds(TDEV_BOUNDS, { padding:[20,20] });
-map.setMaxBounds(L.latLngBounds(NAVER_BOUNDS).pad(0.15));
 new ResizeObserver(() => map.invalidateSize()).observe($('map'));
-let tdevLayer = null, naverLayer = null;
+let tdevLayer = null, detLayer = null;
 const extLayer = L.layerGroup().addTo(map), areaLayer = L.layerGroup().addTo(map), allLayer = L.layerGroup().addTo(map), objLayer = L.layerGroup().addTo(map);
+const blobCache = {};
+let loadSeq = 0;
 
-async function loadTdevSvg(){
+async function loadTdevSvg(seq){
+  if (tdevLayer){ map.removeLayer(tdevLayer); tdevLayer = null; }
   try {
-    const txt = await (await fetch(SVG_URL)).text();
-    const m = txt.match(/<svg\b[^>]*>/); const vb = m[0].match(/viewBox="([^"]+)"/)[1].split(/\s+/).map(Number);
-    const rot = txt.slice(0, m.index + m[0].length) + `<g transform="rotate(180 ${vb[2]/2} ${vb[3]/2})">` + txt.slice(m.index + m[0].length).replace(/<\/svg>\s*$/, '</g></svg>');
-    const url = URL.createObjectURL(new Blob([rot], { type:'image/svg+xml' }));
-    tdevLayer = L.imageOverlay(url, TDEV_BOUNDS, { interactive:false }).addTo(map); tdevLayer.bringToBack();
+    const key = 'svg:' + mapKey;
+    if (!blobCache[key]){
+      let txt = await (await fetch(M.svg)).text();
+      if (M.rotate){
+        const m = txt.match(/<svg\b[^>]*>/); const vb = m[0].match(/viewBox="([^"]+)"/)[1].split(/[\s,]+/).map(Number);
+        txt = txt.slice(0, m.index + m[0].length) + `<g transform="rotate(180 ${vb[2]/2} ${vb[3]/2})">` + txt.slice(m.index + m[0].length).replace(/<\/svg>\s*$/, '</g></svg>');
+      }
+      blobCache[key] = URL.createObjectURL(new Blob([txt], { type:'image/svg+xml' }));
+    }
+    if (seq !== loadSeq) return;
+    tdevLayer = L.imageOverlay(blobCache[key], M.tdev, { interactive:false }).addTo(map); tdevLayer.bringToBack();
   } catch(e){ console.warn('svg load failed', e); }
 }
-async function loadNaver(){
-  if (naverLayer){ map.removeLayer(naverLayer); naverLayer = null; }
-  const ok = !!cfg.token;
-  if (ok){
+function detChoice(){ const c = LS.get('tk_det', {}); return M.details.find(d => d.key === c[mapKey]) || M.details[0]; }
+async function loadDetail(seq){
+  if (detLayer){ map.removeLayer(detLayer); detLayer = null; }
+  DET = null;
+  const d = detChoice();
+  renderDetSeg(d);
+  if (cfg.token && d){
     try {
-      const r = await fetch(`https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${NAVER_FILE}`, { headers: { Authorization: 'Bearer ' + cfg.token, Accept: 'application/vnd.github.raw' }, cache: 'no-store' });
-      if (r.ok){
-        const url = URL.createObjectURL(await r.blob());
-        naverLayer = L.imageOverlay(url, NAVER_BOUNDS, { interactive:false, opacity: naverT }).addTo(map);
+      const key = 'det:' + d.file;
+      if (!blobCache[key]){
+        const r = await fetch(`https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}/contents/${d.file}`, { headers: { Authorization: 'Bearer ' + cfg.token, Accept: 'application/vnd.github.raw' }, cache: 'no-store' });
+        if (r.ok) blobCache[key] = URL.createObjectURL(await r.blob());
+      }
+      if (seq !== loadSeq) return;
+      if (blobCache[key]){
+        DET = d;
+        detLayer = L.imageOverlay(blobCache[key], detBounds(d), { interactive:false, opacity: 0 }).addTo(map);
         if (tdevLayer) tdevLayer.bringToBack();
       }
-    } catch(e){ console.warn('naver load failed', e); }
+    } catch(e){ console.warn('detail load failed', e); }
   }
-  const has = !!naverLayer;
+  const has = !!DET;
   document.querySelectorAll('#baseSeg button').forEach(b => { if (+b.dataset.v > 0) b.disabled = !has; });
-  $('blend').disabled = !has; $('naverHint').style.display = has ? 'none' : 'block';
+  $('blend').disabled = !has;
+  $('naverHint').textContent = !cfg.token ? '상세지도는 ⚙ 설정에서 GitHub 연결 후 보여' : `저장소에 ${d.file} 파일이 없어서 상세지도를 못 불러왔어`;
+  $('naverHint').style.display = has ? 'none' : 'block';
   setBlend(has ? LS.get('tk_blend', 1) : 0);
 }
+function renderDetSeg(active){
+  $('detRow').classList.toggle('show', M.details.length > 1);
+  $('detSeg').innerHTML = M.details.map(d => `<button data-k="${d.key}" class="${active && d.key===active.key?'on':''}">${esc(d.label)}</button>`).join('');
+  $('baseSeg').querySelector('button[data-v="1"]').textContent = M.details.length === 1 ? M.details[0].label : '상세';
+}
+$('detSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const c = LS.get('tk_det', {}); c[mapKey] = b.dataset.k; LS.set('tk_det', c);
+  loadDetail(loadSeq);
+});
 
 function drawStatic(){
   extLayer.clearLayers(); areaLayer.clearLayers();
   if ($('showExt').checked){
     const op = 1 - naverT*0.75;
-    for (const [n, f, x, z] of EXTRACTS){
+    for (const [n, f, x, z] of M.extracts){
       const ll = proj(x, z), c = EXT_COLOR[f];
       L.circleMarker(ll, { radius: f==='transit'?5:6, color:'#000', weight:1.5, fillColor:c, fillOpacity:op, opacity:op }).bindTooltip(n + (f==='both'?' (PMC/스캐브)':f==='scav'?' (스캐브)':f==='pmc'?' (PMC)':''), {direction:'top'}).addTo(extLayer);
       if (naverT < 0.6) L.marker(ll, { icon: L.divIcon({ className:'', html:`<div class="ext" style="color:${c};transform:translate(9px,-7px)">${esc(n)}</div>`, iconSize:[0,0] }), interactive:false }).addTo(extLayer);
     }
   }
   if (naverT < 0.6){
-    for (const [x, z, n] of AREAS) L.marker(proj(x, z), { icon: L.divIcon({ className:'', html:`<div class="arealbl" style="transform:translate(-50%,-50%)">${esc(n)}</div>`, iconSize:[0,0] }), interactive:false }).addTo(areaLayer);
+    for (const [x, z, n] of M.areas) L.marker(proj(x, z), { icon: L.divIcon({ className:'', html:`<div class="arealbl" style="transform:translate(-50%,-50%)">${esc(n)}</div>`, iconSize:[0,0] }), interactive:false }).addTo(areaLayer);
   }
 }
 function pinIcon(n, color, done, dia){
-  return L.divIcon({ className:'', iconSize:[26,26], iconAnchor:[13,13], html:`<div class="opin${done?' done':''}${dia?' dia':''}" style="background:${color}">${dia?`<b>${n}</b>`:n}</div>` });
+  return L.divIcon({ className:'', iconSize:[28,28], iconAnchor:[14,14], html:`<div class="opin${done?' done':''}${dia?' dia':''}" style="background:${color}">${dia?`<b>${n}</b>`:n}</div>` });
 }
 function okOutline(z){
   if (!z.ol || z.ol.length < 3) return false;
@@ -375,7 +446,7 @@ function drawTask(){
     const pts = objPoints(o); if (!pts.length) return; n++;
     const color = PAL[(n-1) % PAL.length], done = oDone(me, o.id) || tDone(me, t.id);
     for (const pt of pts){
-      if (pt.ol) L.polygon(pt.ol.map(q => proj(q[0], q[1])), { color, weight:2, fillColor:color, fillOpacity:.15, dashArray: done?'4 4':null }).addTo(objLayer);
+      if (pt.ol) L.polygon(pt.ol.map(q => proj(q[0], q[1])), { color, weight:2.5, fillColor:color, fillOpacity:.2, dashArray: done?'4 4':null }).addTo(objLayer);
       L.marker(proj(pt.p[0], pt.p[1]), { icon: pinIcon(n, color, done, pt.kind==='pl'), zIndexOffset: 1000 })
         .bindPopup(`<b>${n}. ${esc(o.d)}</b>${o.qi?`<div class="popsub">아이템: ${esc(o.qi)}</div>`:''}${pt.kind==='pl'?'<div class="popsub">◆ 아이템이 있을 수 있는 위치</div>':''}`)
         .addTo(objLayer);
@@ -399,7 +470,7 @@ function drawAll(){
     t.o.forEach(o => {
       if (!o.w || oDone(me, o.id)) return;
       for (const pt of objPoints(o)){
-        L.circleMarker(proj(pt.p[0], pt.p[1]), { radius:5, color:'#000', weight:1.5, fillColor:c, fillOpacity:.95 })
+        L.circleMarker(proj(pt.p[0], pt.p[1]), { radius:6, color:'#000', weight:1.5, fillColor:c, fillOpacity:.95 })
           .bindTooltip(`<b>${esc(nameOf(t))}</b><br>${esc(o.d)}`, { direction:'top' })
           .on('click', () => openTask(t.id)).addTo(allLayer);
       }
@@ -409,12 +480,13 @@ function drawAll(){
 function redrawMap(){ drawStatic(); drawTask(); drawAll(); }
 
 function setBlend(v, fromSlider){
-  naverT = naverLayer ? v : 0;
-  if (naverLayer) naverLayer.setOpacity(naverT);
+  naverT = DET ? v : 0;
+  if (detLayer) detLayer.setOpacity(naverT);
   if (!fromSlider) $('blend').value = Math.round(naverT*100);
-  if (naverLayer) LS.set('tk_blend', naverT);
+  if (DET) LS.set('tk_blend', naverT);
   document.querySelectorAll('#baseSeg button').forEach(b => b.classList.toggle('on', Math.abs(+b.dataset.v - naverT) < 0.01));
-  $('mapnote').style.display = naverT > 0.3 ? '' : 'none';
+  $('mapnote').textContent = DET ? DET.note : '';
+  $('mapnote').style.display = DET && naverT > 0.3 ? '' : 'none';
   clearTimeout(setBlend._t); setBlend._t = setTimeout(redrawMap, fromSlider ? 60 : 0);
 }
 $('baseSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b && !b.disabled) setBlend(+b.dataset.v); });
@@ -423,7 +495,23 @@ $('showExt').addEventListener('change', drawStatic);
 $('showAll').addEventListener('change', drawAll);
 $('ctlMore').addEventListener('click', () => $('mapctl').classList.toggle('open'));
 
-// ---- task data: live from tarkov.dev, cached, fallback file ----
+// ---- switching maps ----
+$('mapSeg').innerHTML = MAP_KEYS.map(k => `<button data-v="${k}">${esc(MAPS[k].name)}</button>`).join('');
+$('mapSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b && b.dataset.v !== mapKey) setMap(b.dataset.v); });
+function setMap(k){
+  mapKey = k; M = MAPS[k]; LS.set('tk_map', k);
+  document.querySelectorAll('#mapSeg button').forEach(b => b.classList.toggle('on', b.dataset.v === k));
+  selected = null; $('detail').classList.remove('show');
+  objLayer.clearLayers(); allLayer.clearLayers(); extLayer.clearLayers(); areaLayer.clearLayers();
+  const seq = ++loadSeq;
+  naverT = 0; DET = null;
+  const outer = L.latLngBounds(M.tdev); M.details.forEach(d => outer.extend(L.latLngBounds(detBounds(d))));
+  map.setMaxBounds(null); map.fitBounds(M.tdev, { padding:[20,20], animate:false }); map.setMaxBounds(outer.pad(0.15));
+  loadTdevSvg(seq); loadDetail(seq);
+  applyData();
+}
+
+// ---- task data: live from tarkov.dev for every map, cached, fallback file for woods ----
 async function buildLive(){
   const J = async u => { const r = await fetch(API + u); if (!r.ok) throw new Error(u + ' ' + r.status); return (await r.json()).data; };
   const [T, TK, TE, TR, TRK] = await Promise.all([J('tasks'), J('tasks_ko'), J('tasks_en'), J('traders'), J('traders_ko')]);
@@ -433,58 +521,65 @@ async function buildLive(){
   const r1 = v => Math.round(v*10)/10;
   const traders = Object.values(TR.traders || TR);
   const trName = id => { const t = traders.find(t => t.id === id); return t ? tr(TRK, t.name) : id; };
-  const onWoods = o => (o.maps||[]).includes(WOODS_ID) || (o.zones||[]).some(z => z.map === WOODS_ID) || (o.possibleLocations||[]).some(p => p.map === WOODS_ID);
-  const out = [];
-  for (const t of tasks){
-    if (!(t.map === WOODS_ID || (t.objectives||[]).some(onWoods))) continue;
-    out.push({
-      id: t.id, ko: hasKo(TK[t.name]) ? TK[t.name] : '', en: tr(TE, t.name), tr: trName(t.trader), lv: t.minPlayerLevel || 0,
-      k: t.kappaRequired ? 1 : 0, lk: t.lightkeeperRequired ? 1 : 0, wiki: t.wikiLink || '',
-      req: (t.taskRequirements||[]).map(q => q.task),
-      o: (t.objectives||[]).map(o => {
-        const d = { id:o.id, t:o.type, d: hasKo(TK[o.description]) ? TK[o.description] : tr(TE, o.description), w: onWoods(o) ? 1 : 0 };
-        if (o.optional) d.opt = 1; if (o.count > 1) d.n = o.count;
-        const zs = (o.zones||[]).filter(z => z.map === WOODS_ID);
-        if (zs.length) d.z = zs.map(z => ({ p:[r1(z.position.x), r1(z.position.z)], ol:(z.outline||[]).map(p => [r1(p.x), r1(p.z)]) }));
-        const pl = (o.possibleLocations||[]).filter(p => p.map === WOODS_ID);
-        if (pl.length) d.pl = pl.flatMap(p => p.positions.map(q => [r1(q.x), r1(q.z)]));
-        if (o.questItem){ const q = qi[o.questItem] || {}; d.qi = q.name ? (hasKo(TK[q.name]) ? TK[q.name] : tr(TE, q.name)) : ''; }
-        return d;
-      })
-    });
+  const tName = tt => hasKo(TK[tt.name]) ? TK[tt.name] : tr(TE, tt.name);
+  const result = {};
+  for (const mk of MAP_KEYS){
+    const MID = MAPS[mk].id;
+    const onMap = o => (o.maps||[]).includes(MID) || (o.zones||[]).some(z => z.map === MID) || (o.possibleLocations||[]).some(p => p.map === MID);
+    const out = [];
+    for (const t of tasks){
+      if (!(t.map === MID || (t.objectives||[]).some(onMap))) continue;
+      out.push({
+        id: t.id, ko: hasKo(TK[t.name]) ? TK[t.name] : '', en: tr(TE, t.name), tr: trName(t.trader), lv: t.minPlayerLevel || 0,
+        k: t.kappaRequired ? 1 : 0, lk: t.lightkeeperRequired ? 1 : 0, wiki: t.wikiLink || '',
+        req: (t.taskRequirements||[]).map(q => q.task),
+        o: (t.objectives||[]).map(o => {
+          const d = { id:o.id, t:o.type, d: hasKo(TK[o.description]) ? TK[o.description] : tr(TE, o.description), w: onMap(o) ? 1 : 0 };
+          if (o.optional) d.opt = 1; if (o.count > 1) d.n = o.count;
+          const zs = (o.zones||[]).filter(z => z.map === MID);
+          if (zs.length) d.z = zs.map(z => ({ p:[r1(z.position.x), r1(z.position.z)], ol:(z.outline||[]).map(p => [r1(p.x), r1(p.z)]) }));
+          const pl = (o.possibleLocations||[]).filter(p => p.map === MID);
+          if (pl.length) d.pl = pl.flatMap(p => p.positions.map(q => [r1(q.x), r1(q.z)]));
+          if (o.questItem){ const q = qi[o.questItem] || {}; d.qi = q.name ? (hasKo(TK[q.name]) ? TK[q.name] : tr(TE, q.name)) : ''; }
+          return d;
+        })
+      });
+    }
+    const reqNames = {};
+    for (const t of out) for (const q of t.req){ const tt = T.tasks[q]; if (tt) reqNames[q] = tName(tt); }
+    result[mk] = { tasks: out, reqNames };
   }
-  const reqNames = {};
-  for (const t of out) for (const q of t.req){ const tt = T.tasks[q]; if (tt) reqNames[q] = hasKo(TK[tt.name]) ? TK[tt.name] : tr(TE, tt.name); }
-  if (!out.length) throw new Error('no woods tasks');
-  return { tasks: out, reqNames };
+  if (!result.woods.tasks.length) throw new Error('no tasks');
+  return result;
 }
-function useData(data, label){
-  REQN = data.reqNames || {};
+function applyData(){
+  const d = DATA[mapKey];
+  if (!d){ TASKS = []; byId = {}; $('count').textContent = ''; $('list').innerHTML = `<div class="empty">${esc(M.name)} 임무 데이터를 아직 못 불러왔어.<br>인터넷 연결을 확인하고 새로고침해줘.</div>`; $('src').textContent = dataLabel; return; }
+  REQN = d.reqNames || {};
   const hasPin = t => t.o.some(o => o.w && ((o.z && o.z.length) || (o.pl && o.pl.length)));
   const norm2 = s => String(s||'').toLowerCase().replace(/\s+/g,'');
-  TASKS = data.tasks.map(t => Object.assign({}, t, { _pin: hasPin(t), _s: norm2([t.ko, t.en, t.tr, ...t.o.map(o => o.d + ' ' + (o.qi||''))].join(' ')) }));
+  TASKS = d.tasks.map(t => Object.assign({}, t, { _pin: hasPin(t), _s: norm2([t.ko, t.en, t.tr, ...t.o.map(o => o.d + ' ' + (o.qi||''))].join(' ')) }));
   TASKS.sort((a, b) => (b._pin - a._pin) || (TRADER_ORDER.indexOf(a.tr) - TRADER_ORDER.indexOf(b.tr)) || (a.lv - b.lv) || nameOf(a).localeCompare(nameOf(b), 'ko'));
   byId = {}; TASKS.forEach(t => byId[t.id] = t);
   const cur = $('fTrader').value;
   const traders = [...new Set(TASKS.map(t => t.tr))].sort((a,b) => TRADER_ORDER.indexOf(a) - TRADER_ORDER.indexOf(b));
   $('fTrader').innerHTML = '<option value="">모든 상인</option>' + traders.map(t => `<option>${esc(t)}</option>`).join('');
   $('fTrader').value = traders.includes(cur) ? cur : '';
-  $('src').textContent = label;
+  $('src').textContent = `${M.name} 임무 ${TASKS.length}개 · ${dataLabel}`;
   if (selected && !byId[selected]) closeTask(); else { renderList(); if (selected){ renderDetail(); drawTask(); } }
 }
-const fmtDate = ts => { const d = new Date(ts); return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
 async function loadTasks(){
-  const cache = LS.get('tk_cache', null);
-  if (cache && cache.data) useData(cache.data, `임무 ${cache.data.tasks.length}개 · tarkov.dev ${fmtDate(cache.ts)} 기준 (갱신 중…)`);
+  const cache = LS.get('tk_cache2', null);
+  if (cache && cache.data){ DATA = cache.data; dataLabel = `tarkov.dev ${fmtDate(cache.ts)} 기준 (갱신 중…)`; applyData(); }
   try {
     const data = await buildLive();
-    LS.set('tk_cache', { ts: Date.now(), data });
-    useData(data, `임무 ${data.tasks.length}개 · tarkov.dev 실시간 (${fmtDate(Date.now())})`);
+    LS.set('tk_cache2', { ts: Date.now(), data });
+    DATA = data; dataLabel = `tarkov.dev 실시간 (${fmtDate(Date.now())})`; applyData();
   } catch(e){
     console.warn('live load failed', e);
-    if (cache && cache.data){ $('src').textContent = `임무 ${cache.data.tasks.length}개 · tarkov.dev ${fmtDate(cache.ts)} 저장본 (지금 연결 안 됨)`; return; }
-    try { const data = await (await fetch('woods_tasks.json')).json(); useData(data, `임무 ${data.tasks.length}개 · 기본 저장본 (2026-11-18)`); }
-    catch(e2){ $('list').innerHTML = '<div class="empty">임무 데이터를 불러오지 못했어.<br>인터넷 연결을 확인하고 새로고침해줘.</div>'; $('src').textContent = ''; }
+    if (cache && cache.data){ dataLabel = `tarkov.dev ${fmtDate(cache.ts)} 저장본 (지금 연결 안 됨)`; applyData(); return; }
+    try { const w = await (await fetch('woods_tasks.json')).json(); DATA = { woods: w }; dataLabel = '기본 저장본 (삼림만, 2026-11-18)'; applyData(); }
+    catch(e2){ dataLabel = ''; applyData(); }
   }
 }
 
@@ -547,7 +642,7 @@ function renderDetail(){
   const t = byId[selected]; if (!t) return;
   $('dTitle').textContent = nameOf(t);
   $('dSub').textContent = t.ko ? t.en : '';
-  const meta = [`상인 ${t.tr}`]; if (t.lv) meta.push(`Lv.${t.lv}+`); if (t.k) meta.push('카파 필요'); if (t.lk) meta.push('등대지기 필요'); if (!t._pin) meta.push('삼림 위치 데이터 없음');
+  const meta = [`상인 ${t.tr}`]; if (t.lv) meta.push(`Lv.${t.lv}+`); if (t.k) meta.push('카파 필요'); if (t.lk) meta.push('등대지기 필요'); if (!t._pin) meta.push(`${M.name} 위치 데이터 없음`);
   $('dMeta').innerHTML = meta.map(m => `<span class="m">${esc(m)}</span>`).join('');
   for (const [btn, p] of [[$('doneSiyoon'),'siyoon'],[$('doneSewon'),'sewon']]){
     const on = tDone(p, t.id), role = p === me ? 'me' : 'pal';
@@ -605,9 +700,6 @@ async function ghPut(p, data, sha){
   if (!r.ok) throw Object.assign(new Error('put ' + r.status), { status: r.status });
 }
 const isDirty = p => Object.keys(dirty[p].tasks).length + Object.keys(dirty[p].objs).length > 0;
-function mergeRemote(p, remote){
-  store[p] = { tasks: { ...remote.tasks, ...dirty[p].tasks }, objs: { ...remote.objs, ...dirty[p].objs } };
-}
 let busy = false, pushTimer = null, lastOk = 0;
 function setSync(txt, cls){ const s = $('sync'); s.textContent = txt; s.className = 'sync ' + (cls||''); }
 function syncLabel(){
@@ -622,7 +714,7 @@ async function syncNow(){
     for (const p of Object.keys(PEOPLE)){
       for (let attempt = 0; attempt < 3; attempt++){
         const remote = await ghGet(p);
-        if (!isDirty(p)){ mergeRemote(p, remote.data); break; }
+        if (!isDirty(p)){ store[p] = { tasks: { ...remote.data.tasks }, objs: { ...remote.data.objs } }; break; }
         const sent = { tasks: { ...dirty[p].tasks }, objs: { ...dirty[p].objs } };
         const merged = { tasks: { ...remote.data.tasks, ...sent.tasks }, objs: { ...remote.data.objs, ...sent.objs } };
         try {
@@ -663,14 +755,17 @@ $('setCancel').addEventListener('click', closeSettings);
 $('setModal').addEventListener('click', e => { if (e.target.id === 'setModal') closeSettings(); });
 async function testConn(owner, repo, token){
   const h = { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json' };
-  const r = await fetch(`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`, { headers: h, cache: 'no-store' });
+  const base = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`;
+  const r = await fetch(base, { headers: h, cache: 'no-store' });
   if (r.status === 401) return ['토큰이 맞지 않아. 다시 복사해서 넣어줘.', 'var(--bad)'];
   if (r.status === 404) return ['저장소를 못 찾았어. 계정/저장소 이름이나 토큰의 저장소 권한을 확인해줘.', 'var(--bad)'];
   if (!r.ok) return [`GitHub 응답 오류 (${r.status})`, 'var(--bad)'];
   const j = await r.json();
   if (j.permissions && !j.permissions.push) return ['읽기만 가능한 토큰이야. Contents 권한을 Read and write로 해줘.', 'var(--warn)'];
-  const img = await fetch(`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${NAVER_FILE}`, { method:'GET', headers: h, cache:'no-store' });
-  return [img.ok ? '연결 성공 · 네이버 지도도 찾았어.' : `연결 성공 · 단, 저장소에 ${NAVER_FILE} 파일이 없어서 네이버 지도는 안 보여.`, img.ok ? 'var(--ok)' : 'var(--warn)'];
+  const files = [...new Set(MAP_KEYS.flatMap(k => MAPS[k].details.map(d => d.file)))];
+  const missing = [];
+  for (const f of files){ const x = await fetch(`${base}/contents/${f}`, { headers: h, cache:'no-store' }); if (!x.ok) missing.push(f); }
+  return missing.length ? [`연결 성공 · 단, 저장소에 없는 지도 파일: ${missing.join(', ')}`, 'var(--warn)'] : ['연결 성공 · 상세지도 파일도 전부 찾았어.', 'var(--ok)'];
 }
 $('setTest').addEventListener('click', async () => {
   const o = $('sOwner').value.trim(), r = $('sRepo').value.trim(), t = $('sToken').value.trim();
@@ -682,7 +777,8 @@ $('setTest').addEventListener('click', async () => {
 $('setSave').addEventListener('click', async () => {
   cfg.owner = $('sOwner').value.trim(); cfg.repo = $('sRepo').value.trim(); cfg.token = $('sToken').value.trim();
   LS.set('tk_gh', cfg); closeSettings(); lastOk = 0; syncLabel();
-  await loadNaver(); syncNow();
+  for (const k in blobCache) if (k.startsWith('det:')) delete blobCache[k];
+  await loadDetail(loadSeq); syncNow();
 });
 
 // ---- who ----
@@ -693,11 +789,13 @@ function setMe(p){
 }
 $('whoSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setMe(b.dataset.v); });
 $('grab').addEventListener('click', () => $('panel').classList.toggle('big'));
+// keep the header (map / person pickers) visible above the task detail
+const hdrEl = document.querySelector('.hdr');
+new ResizeObserver(() => { $('detail').style.top = (hdrEl.offsetTop + hdrEl.offsetHeight) + 'px'; }).observe(hdrEl);
 
 // ---- boot ----
 setMe(me); syncLabel();
-loadTdevSvg().then(() => { if (naverLayer) tdevLayer && tdevLayer.bringToBack(); });
-loadNaver();
+setMap(mapKey);
 loadTasks();
 syncNow();
 if (!LS.get('tk_seen', false) && !cfg.token){ LS.set('tk_seen', true); setTimeout(openSettings, 600); }
