@@ -145,19 +145,36 @@ select{background:#fff;border:1.5px solid var(--line2);color:#111;border-radius:
 .popsub{color:#444;font-size:13px;margin-top:3px}
 
 @media (max-width: 900px){
+  html,body{overflow:hidden;overscroll-behavior:none;position:fixed;inset:0}
   #app{grid-template-columns:1fr;grid-template-rows:1fr}
   #mapwrap{grid-row:1;grid-column:1}
-  #panel{grid-row:1;grid-column:1;align-self:end;height:46vh;height:46dvh;border-right:0;border-top:1px solid var(--line2);border-radius:14px 14px 0 0;box-shadow:0 -6px 24px #0003;transition:height .2s}
-  #panel.big{height:82vh;height:82dvh}
-  .grab{display:block!important}
-  .mapctl{width:auto;left:12px;right:12px;top:10px;padding:8px 10px}
+  #panel{grid-row:1;grid-column:1;align-self:end;height:var(--sheet,55dvh);border-right:0;border-top:1px solid var(--line2);border-radius:16px 16px 0 0;box-shadow:0 -6px 24px #0003;transition:height .22s ease}
+  #panel.dragging{transition:none}
+  .grab{display:flex!important}
+  .hdr{padding:2px 12px 8px;touch-action:none}
+  .brand h1{font-size:18px}
+  .gear{padding:4px 9px;font-size:13px}
+  .mapsel{margin-top:6px;display:inline-flex!important;vertical-align:middle;margin-right:6px}
+  .mapsel .seg button{font-size:14px;padding:5px 13px}
+  .who{margin-top:6px;display:inline-flex;vertical-align:middle;flex-wrap:nowrap}
+  .who label{display:none}
+  .who .seg button{padding:5px 11px}
+  .sync{position:absolute;right:86px;top:9px;margin:0;font-size:12px}
+  .hdr{position:relative}
+  .src{display:none}
+  .tools{padding:8px 12px;gap:6px}
+  #list,.dbody,#detail{touch-action:pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+  #detail{overflow:auto}
+  #detail .dbody{overflow:visible;flex:none}
+  .mapctl{width:auto;left:10px;right:10px;top:10px;padding:8px 10px}
   .mapctl .more{display:none!important}
   .mapctl.open .more{display:flex!important}
   .toggleCtl{display:inline-block}
   .mapnote{display:none}
-  .leaflet-bottom{bottom:calc(46dvh + 6px)}
+  .leaflet-bottom{bottom:calc(var(--sheet-px,55vh) + 6px)}
 }
-.grab{display:none;width:48px;height:5px;background:#999;border-radius:3px;margin:8px auto 0;cursor:pointer;border:0;padding:0}
+.grab{display:none;width:100%;height:22px;align-items:center;justify-content:center;background:none;border:0;padding:0;cursor:grab;touch-action:none}
+.grab::before{content:"";width:52px;height:5px;border-radius:3px;background:#999}
 
 .mapsel{display:flex;align-items:center;gap:8px;margin-top:10px}
 .mapsel .seg button{font-size:15px;padding:6px 16px}
@@ -349,12 +366,17 @@ function proj(x, z){
 }
 
 // ---- map ----
-const map = L.map('map', { crs: L.CRS.Simple, minZoom: -2, maxZoom: 2, zoomSnap: 0.25, zoomDelta: 0.5, attributionControl: false });
+const map = L.map('map', { crs: L.CRS.Simple, minZoom: -4, maxZoom: 2, zoomSnap: 0.25, zoomDelta: 0.5, attributionControl: false });
 map.zoomControl.setPosition('bottomright');
 new ResizeObserver(() => map.invalidateSize()).observe($('map'));
 let tdevLayer = null, detLayer = null;
+map.on('zoomend', () => drawStatic());
 const extLayer = L.layerGroup().addTo(map), areaLayer = L.layerGroup().addTo(map), allLayer = L.layerGroup().addTo(map), objLayer = L.layerGroup().addTo(map);
 const blobCache = {};
+let userMoved = false;
+map.on('dragstart', () => { userMoved = true; });
+map.getContainer().addEventListener('wheel', () => { userMoved = true; }, { passive:true });
+map.getContainer().addEventListener('touchstart', e => { if (e.touches.length > 1) userMoved = true; }, { passive:true });
 let loadSeq = 0;
 
 async function loadTdevSvg(seq){
@@ -419,10 +441,10 @@ function drawStatic(){
     for (const [n, f, x, z] of M.extracts){
       const ll = proj(x, z), c = EXT_COLOR[f];
       L.circleMarker(ll, { radius: f==='transit'?5:6, color:'#000', weight:1.5, fillColor:c, fillOpacity:op, opacity:op }).bindTooltip(n + (f==='both'?' (PMC/스캐브)':f==='scav'?' (스캐브)':f==='pmc'?' (PMC)':''), {direction:'top'}).addTo(extLayer);
-      if (naverT < 0.6) L.marker(ll, { icon: L.divIcon({ className:'', html:`<div class="ext" style="color:${c};transform:translate(9px,-7px)">${esc(n)}</div>`, iconSize:[0,0] }), interactive:false }).addTo(extLayer);
+      if (naverT < 0.6 && map.getZoom() >= -1.25) L.marker(ll, { icon: L.divIcon({ className:'', html:`<div class="ext" style="color:${c};transform:translate(9px,-7px)">${esc(n)}</div>`, iconSize:[0,0] }), interactive:false }).addTo(extLayer);
     }
   }
-  if (naverT < 0.6){
+  if (naverT < 0.6 && map.getZoom() >= -1.75){
     for (const [x, z, n] of M.areas) L.marker(proj(x, z), { icon: L.divIcon({ className:'', html:`<div class="arealbl" style="transform:translate(-50%,-50%)">${esc(n)}</div>`, iconSize:[0,0] }), interactive:false }).addTo(areaLayer);
   }
 }
@@ -463,7 +485,7 @@ function boundsOf(objs){
 }
 function fitTask(){
   const t = byId[selected]; if (!t) return;
-  const b = boundsOf(t.o); if (b.length) map.flyToBounds(L.latLngBounds(b).pad(0.35), { maxZoom: 0.75, duration: .6 });
+  const b = boundsOf(t.o); if (b.length) map.flyToBounds(L.latLngBounds(b).pad(0.35), Object.assign(mapPad(), { maxZoom: 0.75, duration: .6 }));
 }
 function drawAll(){
   allLayer.clearLayers();
@@ -508,10 +530,11 @@ function setMap(k){
   objLayer.clearLayers(); allLayer.clearLayers(); extLayer.clearLayers(); areaLayer.clearLayers();
   const seq = ++loadSeq;
   naverT = 0; DET = null;
-  const outer = L.latLngBounds(M.tdev); M.details.forEach(d => outer.extend(L.latLngBounds(detBounds(d))));
-  map.setMaxBounds(null); map.fitBounds(M.tdev, { padding:[20,20], animate:false }); map.setMaxBounds(outer.pad(0.15));
+  fitView(M.tdev, { animate:false });
   loadTdevSvg(seq); loadDetail(seq);
   applyData();
+  userMoved = false;
+  setTimeout(() => { if (!userMoved && !selected && seq === loadSeq){ map.invalidateSize(); fitView(M.tdev, { animate:false }); } }, 450);
 }
 
 // ---- task data: live from tarkov.dev for every map, cached, fallback file for woods ----
@@ -634,9 +657,9 @@ $('qx').addEventListener('click', () => { $('q').value=''; $('qx').style.display
 // ---- detail ----
 function openTask(id){
   selected = id;
-  $('detail').classList.add('show'); renderDetail(); drawAll(); drawTask(); fitTask();
+  if (isMobile() && sheetFrac > 0.6) setSheet(SNAPS[1]);
+  $('detail').classList.add('show'); renderDetail(); drawAll(); drawTask(); setTimeout(fitTask, isMobile() ? 240 : 0);
   document.querySelectorAll('.item').forEach(b => b.classList.toggle('sel', b.dataset.id === id));
-  if (innerWidth <= 900) $('panel').classList.remove('big');
 }
 function closeTask(){ selected = null; $('detail').classList.remove('show'); objLayer.clearLayers(); renderList(); }
 $('back').addEventListener('click', closeTask);
@@ -673,8 +696,8 @@ $('dBody').addEventListener('click', e => {
   const g = e.target.closest('.goto');
   if (g){
     const o = byId[selected].o.find(x => x.id === g.dataset.o);
-    const b = boundsOf([o]); if (b.length) map.flyToBounds(L.latLngBounds(b).pad(0.6), { maxZoom: 1.25, duration:.5 });
-    if (innerWidth <= 900) $('panel').classList.remove('big');
+    if (isMobile()) setSheet(SNAPS[0]);
+    const b = boundsOf([o]); if (b.length) map.flyToBounds(L.latLngBounds(b).pad(0.6), Object.assign(mapPad(), { maxZoom: 1.25, duration:.5 }));
     return;
   }
   const c = e.target.closest('.ob'); if (c) toggle(c.dataset.p, 'objs', c.dataset.o);
@@ -791,7 +814,57 @@ function setMe(p){
   statusOptions(); refreshAfterChange();
 }
 $('whoSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setMe(b.dataset.v); });
-$('grab').addEventListener('click', () => $('panel').classList.toggle('big'));
+// ---- mobile bottom sheet: drag the handle or the header up/down ----
+const panelEl = $('panel');
+const isMobile = () => innerWidth <= 900;
+const SNAPS = [0.24, 0.5, 0.9];
+let sheetFrac = LS.get('tk_sheet', 0.5);
+function setSheetPx(px, save){
+  const h = Math.max(innerHeight*0.16, Math.min(innerHeight*0.92, px));
+  document.documentElement.style.setProperty('--sheet', h + 'px');
+  document.documentElement.style.setProperty('--sheet-px', h + 'px');
+  if (save){ sheetFrac = h / innerHeight; LS.set('tk_sheet', sheetFrac); }
+}
+function setSheet(frac){ setSheetPx(innerHeight*frac, true); }
+setSheetPx(innerHeight*sheetFrac);
+addEventListener('resize', () => setSheetPx(innerHeight*sheetFrac));
+let drag = null, justDragged = false;
+function sheetDown(e){
+  if (!isMobile() || e.target.closest('input,select,textarea')) return;
+  drag = { y: e.clientY, h: panelEl.getBoundingClientRect().height, moved: false, onGrab: !!e.target.closest('#grab') };
+}
+$('grab').addEventListener('pointerdown', sheetDown);
+document.querySelector('.hdr').addEventListener('pointerdown', sheetDown);
+addEventListener('pointermove', e => {
+  if (!drag) return;
+  const dy = e.clientY - drag.y;
+  if (!drag.moved && Math.abs(dy) < 8) return;
+  if (!drag.moved){ drag.moved = true; panelEl.classList.add('dragging'); }
+  setSheetPx(drag.h - dy);
+  e.preventDefault();
+}, { passive: false });
+function sheetUp(){
+  if (!drag) return;
+  const d = drag; drag = null; panelEl.classList.remove('dragging');
+  if (d.moved){
+    const f = panelEl.getBoundingClientRect().height / innerHeight;
+    setSheet(SNAPS.reduce((a, b) => Math.abs(b - f) < Math.abs(a - f) ? b : a));
+    justDragged = true; setTimeout(() => justDragged = false, 300);
+  } else if (d.onGrab){
+    const i = SNAPS.findIndex(x => Math.abs(x - sheetFrac) < 0.05);
+    setSheet(SNAPS[(i + 1) % SNAPS.length]);
+  }
+}
+addEventListener('pointerup', sheetUp); addEventListener('pointercancel', sheetUp);
+panelEl.addEventListener('click', e => { if (justDragged){ e.stopPropagation(); e.preventDefault(); } }, true);
+
+// map padding so fitted views land in the part of the map not covered by the sheet / controls
+function mapPad(){
+  if (!isMobile()) return { paddingTopLeft:[20, 20], paddingBottomRight:[20, 20] };
+  const sheet = panelEl.getBoundingClientRect().height, ctl = $('mapctl').getBoundingClientRect().height;
+  return { paddingTopLeft:[12, ctl + 18], paddingBottomRight:[12, sheet + 12] };
+}
+function fitView(bounds, opts){ map.fitBounds(bounds, Object.assign(mapPad(), opts || {})); }
 // keep the header (map / person pickers) visible above the task detail
 const hdrEl = document.querySelector('.hdr');
 new ResizeObserver(() => { $('detail').style.top = (hdrEl.offsetTop + hdrEl.offsetHeight) + 'px'; }).observe(hdrEl);
