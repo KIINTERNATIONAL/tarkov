@@ -312,6 +312,20 @@ const MAPS = {
       ['→ 등대','transit',416.8,-214.1],['→ 터미널','transit',-965.6,373.8],['→ 미궁','transit',-195.1,-82.9],['→ 쇄빙선','transit',-315.7,525.7]
     ],
     areas: [[-258.2,-71.2,'리조트'],[-215.8,178.4,'변전소'],[-189.3,420,'주유소'],[-496,257,'기상관측소'],[-708.9,93.9,'라디오 타워'],[326,-118.5,'늪지대'],[418.4,118,'빌리지'],[288,144,'오두막'],[128,93,'코테지'],[-355,188,'탱크 다리'],[-338.6,525,'선착장'],[216,424,'스캐브 섬'],[-96,-6,'버스 정류장'],[52,134,'공사장'],[-153,-290,'벙커'],[-625,484,'크레인'],[-622,-202,'스캐브 농장']]
+  },
+  groundzero: {
+    id: '653e6760052c01c1c805532f', ids: ['653e6760052c01c1c805532f','65b8d6f5cdde2479cb2a3125'], name: '그라운드 제로', svg: 'https://assets.tarkov.dev/maps/svg/GroundZero.svg', rotate: false, hideUnderground: true, sx: -1, sz: -1,
+    tdev: [[-364,-249],[124,99]],
+    details: [
+      { key:'3d', label:'3D', file:'ground_zero_3d.jpg', w:1416, h:2160, base:[4.04325,882.665,-3.78834,622.866], tps:{"c":[],"w":[],"a":[[886.768,657.493],[-404.325,-46.169],[-3.42,378.834]]},
+        note:'그라운드 제로 3D 지도는 핀이 5~10m 어긋날 수 있어 (건물 안·지하는 더). 정확한 위치는 \'최신\'으로 확인' }
+    ],
+    extracts: [
+      ['Emercom Checkpoint','both',151.6,-97.5],['Scav Checkpoint (Co-op)','shared',25.2,-79.5],['Mira Ave (조명탄)','pmc',218.2,-38.5],['Police Cordon V-Ex','pmc',-19.5,114.9],
+      ['Nakatani Basement Stairs','both',-16.1,335.1],['Tartowers Sales Office','pmc',190.8,133.4],['Pinewood Basement (Co-op)','shared',-113.7,65.6],
+      ['→ 타르코프 시내','transit',229.6,65.4]
+    ],
+    areas: [[141.1,-15.2,'Skyside'],[-37.1,36.9,'Terragroup'],[137.3,137.6,'Fusion'],[51.1,148.4,'Empire'],[120.0,294.4,'Capital Insight'],[26.4,315.4,'Nakatani'],[45.3,222.6,'Gagarin Hotel'],[106.9,104.7,'Oasis'],[55.1,121.0,'Tarbank'],[133.9,-109.6,'Emercom'],[159.8,-80.2,'Unity Credit Bank'],[165.8,188.0,'Tartowers']]
   }
 };
 const MAP_KEYS = Object.keys(MAPS);
@@ -385,6 +399,7 @@ async function loadTdevSvg(seq){
     const key = 'svg:' + mapKey;
     if (!blobCache[key]){
       let txt = await (await fetch(M.svg)).text();
+      if (M.hideUnderground) txt = txt.replace('<g id="Underground_Level"', '<g id="Underground_Level" style="display:none"');
       if (M.rotate){
         const m = txt.match(/<svg\b[^>]*>/); const vb = m[0].match(/viewBox="([^"]+)"/)[1].split(/[\s,]+/).map(Number);
         txt = txt.slice(0, m.index + m[0].length) + `<g transform="rotate(180 ${vb[2]/2} ${vb[3]/2})">` + txt.slice(m.index + m[0].length).replace(/<\/svg>\s*$/, '</g></svg>');
@@ -550,11 +565,12 @@ async function buildLive(){
   const tName = tt => hasKo(TK[tt.name]) ? TK[tt.name] : tr(TE, tt.name);
   const result = {};
   for (const mk of MAP_KEYS){
-    const MID = MAPS[mk].id;
-    const onMap = o => (o.maps||[]).includes(MID) || (o.zones||[]).some(z => z.map === MID) || (o.possibleLocations||[]).some(p => p.map === MID);
+    const MIDS = MAPS[mk].ids || [MAPS[mk].id];
+    const isM = id => MIDS.includes(id);
+    const onMap = o => (o.maps||[]).some(isM) || (o.zones||[]).some(z => isM(z.map)) || (o.possibleLocations||[]).some(p => isM(p.map));
     const out = [];
     for (const t of tasks){
-      if (!(t.map === MID || (t.objectives||[]).some(onMap))) continue;
+      if (!(isM(t.map) || (t.objectives||[]).some(onMap))) continue;
       out.push({
         id: t.id, ko: hasKo(TK[t.name]) ? TK[t.name] : '', en: tr(TE, t.name), tr: trName(t.trader), lv: t.minPlayerLevel || 0,
         k: t.kappaRequired ? 1 : 0, lk: t.lightkeeperRequired ? 1 : 0, wiki: t.wikiLink || '',
@@ -562,9 +578,9 @@ async function buildLive(){
         o: (t.objectives||[]).map(o => {
           const d = { id:o.id, t:o.type, d: hasKo(TK[o.description]) ? TK[o.description] : tr(TE, o.description), w: onMap(o) ? 1 : 0 };
           if (o.optional) d.opt = 1; if (o.count > 1) d.n = o.count;
-          const zs = (o.zones||[]).filter(z => z.map === MID);
+          const zs = (o.zones||[]).filter(z => isM(z.map));
           if (zs.length) d.z = zs.map(z => ({ p:[r1(z.position.x), r1(z.position.z)], ol:(z.outline||[]).map(p => [r1(p.x), r1(p.z)]) }));
-          const pl = (o.possibleLocations||[]).filter(p => p.map === MID);
+          const pl = (o.possibleLocations||[]).filter(p => isM(p.map));
           if (pl.length) d.pl = pl.flatMap(p => p.positions.map(q => [r1(q.x), r1(q.z)]));
           if (o.questItem){ const q = qi[o.questItem] || {}; d.qi = q.name ? (hasKo(TK[q.name]) ? TK[q.name] : tr(TE, q.name)) : ''; }
           return d;
