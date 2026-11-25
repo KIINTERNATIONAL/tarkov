@@ -388,6 +388,23 @@ const MAPS = {
     ],
     areas: [[-35, 64, '파인우드 호텔'], [-128, -35, '클리모프 쇼핑몰'], [-45, -52, '벨루가'], [99, -71, '카디널 아파트'], [239, -60, 'LERM 엑스포'], [89, -20, '카디널 은행'], [230, 295, '공사장'], [66, 305, '렉서스'], [140, 300, '스파르야 마트'], [140, 362, '콩코르디아'], [-175, 400, '극장'], [-218, 135, '셰스툐로치카'], [42, 97, '우체국'], [42, 160, '약국'], [211, 129, '학교'], [222, 173, '동물병원'], [-119, 287, '폐공장'], [-64, 166, '스파르야 익스프레스'], [67, 230, '타르뱅크'], [-80, 235, '다이너'], [65, 398, '테라코트 / 쾨너']]
   }
+  ,
+  customs: {
+    id: '56f40101d2720b2a4d8b45d6', name: '세관', svg: 'https://assets.tarkov.dev/maps/svg/Customs.svg', rotate: false, sx: -1, sz: -1,
+    hideUnderground: true, hideGroups: ['Second_Floor','Third_Floor'],
+    tdev: [[-237,-698],[307,372]],
+    details: [
+      { key:'2d', label:'2D 한글', file:'customs_2d.jpg', w:2250, h:1260, flip:true, base:[2.0804, 775.749, -2.11163, 570.163], tps:{"h":[[1.97506405, 0.08327186, 765.90476187], [-0.01613933, -2.0441914, 562.96105071], [-7.228e-05, 6.203e-05, 1.0]]},
+        note:'모빌리스 2D 한글 지도 (0.12.8) · 이 지도는 위아래가 반대라 화면도 같이 돌려서 보여줘. 윤곽으로 맞춤, 핀 오차 3~5m · 탈출구 위치 일부는 지금과 달라' },
+      { key:'3d', label:'3D', file:'customs_3d.jpg', w:1884, h:1270, base:[1.74597, 1298.832, -1.41864, 525.745], tps:{"h":[[-1.82073708, -0.13833388, 1318.71482215], [0.05071228, 1.25569301, 496.95665064], [-6.899e-05, -0.0003115, 1.0]]},
+        note:'RE3MR 3D (모빌리스 편집, 12.12) · 핀 오차 5~10m (건물 안·옥상은 더) · 탈출구 위치 일부는 지금과 달라' }
+    ],
+    extracts: [
+      ["Old Gas Station",'both',310.5,-174.5,"구 주유소"],["Railroad to Reserve",'both',489.1,221.4,"리저브행 철도 (옛 Railroad to Military Base)"],["Crossroads",'both',-336.3,-86.4,"교차로"],["Administration Gate",'scav',664.7,-55.3,"관리동 정문"],["Old Road Gate",'scav',181.8,214,"옛 도로 정문"],["Dorms V-Ex",'pmc',181.1,213.3,"기숙사 차량 탈출 · 유료"],["RUAF Roadblock",'both',-10.2,-138.4,"러시아군 바리케이드"],["Sniper Roadblock",'scav',15.1,126.3,"저격수 바리케이드"],["Factory Shacks",'scav',205.6,3.3,"공장 판잣집"],["Warehouse 4",'scav',341.6,-25.8,"4번 창고"],["Boiler Room Basement (Co-op)",'shared',107,-43.6,"보일러실 지하 · 협동"],["Railroad Passage (Flare)",'pmc',140.6,-322.8,"철도 통로 · 조명탄"],["Railroad to Port",'scav',-149.1,46.7,"항구행 철도"],["Gate Near Medblock",'scav',62.3,-174.5,"의무동 근처 정문"],["ZB-1013",'pmc',201,-153.1,"ZB-1013 벙커"],["ZB-1011",'both',623.5,-127.1,"ZB-1011 벙커 (스캐브: 공장 끝 구석)"],["Railroad to Tarkov",'scav',-153.4,-217.7,"타르코프행 철도"],["Reserve Checkpoint",'scav',644.9,126.9,"리저브 검문소"],["Trailer Park",'both',-315.9,-232.4,"트레일러 주차장"],["Passage Between Rocks",'scav',539.4,200.3,"바위 사이 통로"],["Smugglers' Boat",'pmc',-41.5,122.7,"밀수꾼 보트"],["Smugglers' Bunker (ZB-1012)",'pmc',462.5,-112.2,"밀수꾼 벙커 (ZB-1012)"],
+      ['→ 리저브','transit',650.6,124.9],['→ 공장','transit',354.3,-190.1],['→ 인터체인지','transit',-334.2,-211.9],['→ 해안선','transit',20.9,139.6]
+    ],
+    areas: [[-215, -119, '빨간 창고'], [200, 150, '기숙사'], [404, 31, '신 주유소'], [331, -173, '구 주유소'], [201, -127, '신골조 (요새)'], [83, -153, '크랙하우스'], [-69, 9, '메인 다리'], [110, 85, '저격 언덕'], [-288, -134, '물류 창고'], [-211, -219, '트레일러 주차장'], [-66, 46, '고물 다리'], [106, -90, '정비소'], [491, 63, '저격 능선'], [75, -9, '골조'], [200, -13, '구 골조'], [390, -94, '3번 창고'], [472, -67, '집하장'], [555, -118, '7번 창고'], [572, 0, '군 검문소'], [238, 53, '버스 터미널'], [333, -67, '4번 창고'], [497, 110, '송전탑'], [46, -59, '17번 창고'], [567, -67, '스트리머 하우스']]
+  }
 };
 const MAP_KEYS = Object.keys(MAPS);
 
@@ -419,7 +436,8 @@ const nameOf = t => t.ko || t.en;
 
 // ---- projection ----
 let naverT = 0;          // 0 = raw tarkov.dev positions, 1 = positions on the detail image
-let DET = null;          // active detail entry of the current map (null if none loaded)
+let DET = null;
+let FLIP = false;         // true while a detail map drawn upside-down vs tarkov.dev is active (view turned 180°)          // active detail entry of the current map (null if none loaded)
 function U(r){ return r > 0 ? r*r*Math.log(r) : 0; }
 function tps(T, x, z){
   if (T.h){ const h = T.h, w = h[2][0]*x + h[2][1]*z + h[2][2]; return [(h[0][0]*x + h[0][1]*z + h[0][2])/w, (h[1][0]*x + h[1][1]*z + h[1][2])/w]; }
@@ -427,7 +445,8 @@ function tps(T, x, z){
   for (let i=0;i<T.c.length;i++){ const dx = gx-T.c[i][0], dz = gz-T.c[i][1]; const u = U(Math.sqrt(dx*dx+dz*dz)); px += u*T.w[i][0]; py += u*T.w[i][1]; }
   return [px, py];
 }
-const disp = (x, z) => [M.sz*z, M.sx*x];
+const disp = (x, z) => FLIP ? [-M.sz*z, -M.sx*x] : [M.sz*z, M.sx*x];
+const tdevB = () => FLIP ? [[-M.tdev[1][0], -M.tdev[1][1]], [-M.tdev[0][0], -M.tdev[0][1]]] : M.tdev;
 function detBounds(d){
   const [bx, bxo, by, byo] = d.base;
   const lngA = (0-bxo)/bx, lngB = (d.w-bxo)/bx, latA = (0-byo)/by, latB = (d.h-byo)/by;
@@ -458,26 +477,33 @@ let loadSeq = 0;
 async function loadTdevSvg(seq){
   if (tdevLayer){ map.removeLayer(tdevLayer); tdevLayer = null; }
   try {
-    const key = 'svg:' + mapKey;
+    const key = 'svg:' + mapKey + (FLIP ? ':f' : ''), rot = !!M.rotate !== FLIP;
     if (!blobCache[key]){
       let txt = await (await fetch(M.svg)).text();
       if (M.hideUnderground) txt = txt.replace('<g id="Underground_Level"', '<g id="Underground_Level" style="display:none"');
       for (const gid of (M.hideGroups || [])) txt = txt.replace(`<g id="${gid}"`, `<g id="${gid}" style="display:none"`);
-      if (M.rotate){
+      if (rot){
         const m = txt.match(/<svg\b[^>]*>/); const vb = m[0].match(/viewBox="([^"]+)"/)[1].split(/[\s,]+/).map(Number);
         txt = txt.slice(0, m.index + m[0].length) + `<g transform="rotate(180 ${vb[2]/2} ${vb[3]/2})">` + txt.slice(m.index + m[0].length).replace(/<\/svg>\s*$/, '</g></svg>');
       }
       blobCache[key] = URL.createObjectURL(new Blob([txt], { type:'image/svg+xml' }));
     }
-    if (seq !== loadSeq) return;
-    tdevLayer = L.imageOverlay(blobCache[key], M.tdev, { interactive:false }).addTo(map); tdevLayer.bringToBack();
+    if (seq !== loadSeq || key !== 'svg:' + mapKey + (FLIP ? ':f' : '')) return;
+    if (tdevLayer) map.removeLayer(tdevLayer);
+    tdevLayer = L.imageOverlay(blobCache[key], tdevB(), { interactive:false }).addTo(map); tdevLayer.bringToBack();
   } catch(e){ console.warn('svg load failed', e); }
 }
 function detChoice(){ const c = LS.get('tk_det', {}); return M.details.find(d => d.key === c[mapKey]) || M.details[0]; }
+function setFlip(v, seq){
+  if (v === FLIP) return;
+  FLIP = v; const c = map.getCenter(); map.setView([-c.lat, -c.lng], map.getZoom(), { animate:false });
+  loadTdevSvg(seq);
+}
 async function loadDetail(seq){
   if (detLayer){ map.removeLayer(detLayer); detLayer = null; }
   DET = null;
   const d = detChoice();
+  setFlip(!!(d && d.flip && cfg.token), seq);
   renderDetSeg(d);
   if (cfg.token && d){
     try {
@@ -495,6 +521,7 @@ async function loadDetail(seq){
     } catch(e){ console.warn('detail load failed', e); }
   }
   const has = !!DET;
+  if (!has && seq === loadSeq) setFlip(false, seq);
   document.querySelectorAll('#baseSeg button').forEach(b => { if (+b.dataset.v > 0) b.disabled = !has; });
   $('blend').disabled = !has;
   $('naverHint').textContent = !cfg.token ? '상세지도는 ⚙ 설정에서 GitHub 연결 후 보여' : `저장소에 ${d.file} 파일이 없어서 상세지도를 못 불러왔어`;
@@ -516,11 +543,11 @@ function drawStatic(){
   extLayer.clearLayers(); areaLayer.clearLayers();
   if ($('showExt').checked){
     const op = 1 - naverT*0.75;
-    for (const [n, f, x, z, ko] of M.extracts){
+    M.extracts.forEach(([n, f, x, z, ko], i) => {
       const ll = proj(x, z), c = EXT_COLOR[f];
       L.circleMarker(ll, { radius: f==='transit'?5:6, color:'#000', weight:1.5, fillColor:c, fillOpacity:op, opacity:op }).bindTooltip(n + (ko ? ' · ' + ko : '') + (f==='both'?' (PMC/스캐브)':f==='scav'?' (스캐브)':f==='pmc'?' (PMC)':''), {direction:'top'}).addTo(extLayer);
-      if (naverT < 0.6 && map.getZoom() >= -1.25) L.marker(ll, { icon: L.divIcon({ className:'', html:`<div class="ext" style="color:${c};transform:translate(9px,${f==='transit' && M.extracts.some(e => e[1]!=='transit' && Math.hypot(e[2]-x, e[3]-z) < 10) ? '10px' : '-7px'})">${esc(n)}${ko ? `<span class="extko">${esc(ko)}</span>` : ''}</div>`, iconSize:[0,0] }), interactive:false }).addTo(extLayer);
-    }
+      if (naverT < 0.6 && map.getZoom() >= -1.25) L.marker(ll, { icon: L.divIcon({ className:'', html:`<div class="ext" style="color:${c};transform:translate(9px,${M.extracts.some((e, j) => j < i && Math.hypot(e[2]-x, e[3]-z) < 12) ? '28px' : '-7px'})">${esc(n)}${ko ? `<span class="extko">${esc(ko)}</span>` : ''}</div>`, iconSize:[0,0] }), interactive:false }).addTo(extLayer);
+    });
   }
   if (naverT < 0.6 && map.getZoom() >= -1.75){
     for (const [x, z, n] of M.areas) L.marker(proj(x, z), { icon: L.divIcon({ className:'', html:`<div class="arealbl" style="transform:translate(-50%,-50%)">${esc(n)}</div>`, iconSize:[0,0] }), interactive:false }).addTo(areaLayer);
@@ -608,11 +635,12 @@ function setMap(k){
   objLayer.clearLayers(); allLayer.clearLayers(); extLayer.clearLayers(); areaLayer.clearLayers();
   const seq = ++loadSeq;
   naverT = 0; DET = null;
-  fitView(M.tdev, { animate:false });
+  { const d0 = detChoice(); FLIP = !!(d0 && d0.flip && cfg.token); }
+  fitView(tdevB(), { animate:false });
   loadTdevSvg(seq); loadDetail(seq);
   applyData();
   userMoved = false;
-  setTimeout(() => { if (!userMoved && !selected && seq === loadSeq){ map.invalidateSize(); fitView(M.tdev, { animate:false }); } }, 450);
+  setTimeout(() => { if (!userMoved && !selected && seq === loadSeq){ map.invalidateSize(); fitView(tdevB(), { animate:false }); } }, 450);
 }
 
 // ---- task data: live from tarkov.dev for every map, cached, fallback file for woods ----
@@ -800,24 +828,33 @@ document.addEventListener('keydown', e => { if ($('lb').hidden) return; if (e.ke
 const TM_RAW = `A Big Loss	638b44d2-22aa-4c27-97f1-31fc18bb984c
 A Bitter Victory	430a17f2-ff55-438a-a9c8-2935b59ef587
 A Helping Hand	7469e62e-332a-4d7f-a048-d9e0d2e57238
+Abandoned Cargo	5eaf8870-931f-429e-83dc-5f3a95575fc4
 Accidental Witness	06f66cae-793a-4119-9973-35d8a7b5c9a0
 Against the Conscience - Part 1	38359aaa-7648-49d7-9764-01e7e032d524
+Aid Stations	36970283-68b4-4fd5-a612-bf86dc5c2b85
 Airmail	8dfbda16-caa5-4a95-881f-abce5e8c3595
 All This Filth...	3137f8cf-4872-4332-a632-89205df9507a
 Anesthesia	f2dbc778-45ea-4538-bd0f-f05379f6affc
 Another Shipping Delay	01adb05a-3bb1-4f77-ba10-9ad7095452e8
 Audiophile	4bc25649-c363-4517-b65e-dd898a6216b1
 Audit	f0129caf-284d-44af-a2d2-7d8167548a91
+Background Check	b22925ff-9127-4abd-a647-fbd78f8e1902
+Bad Rep Evidence	3f65c737-aedd-4605-a932-656363974c61
 Balancing - Part 1	b1d5faf9-146a-4c20-b47a-9bc32b1555b0
 Balancing - Part 2	36887a3c-27bd-4f78-b57c-bcfafb890c6f
 Ballet Lover	b4b90c9f-d4d0-4454-97ab-7e140698b689
 Battery Change	15623ab0-0371-47cf-b1c4-01cfb58e726a
 Batya	0ffa82e8-9b4d-491e-82af-5db07c6eec13
+Belka and Strelka	a4db0555-417d-4dc0-8d34-8a4f3db61da5
 Beneath The Streets	584716b4-3c29-4876-9a52-487e19b68feb
+Between Two Fires	4f0d2f51-4c54-4325-82c1-333b72f8d8e7
 Beyond the Red Meat	7a09b0e2-62da-45df-9fec-15750737c7d5
+Big Customer	fe06c7d0-d388-4d1a-9b45-7c31821a8093
 Big Sale	1e4cc39c-f577-4f21-b8af-ef4a5f17d636
+Blood in the Water	e0815d72-e14c-4d1f-94c1-9d24c9c38ac7
 Blue Fire	d24bc629-c7dd-4118-a96e-2b052a0aeb77
 Boreas	eb61e50c-3409-48d4-94ce-dda0fa7fe7c1
+Break the Deal	6f8ae056-57e9-4992-a820-56befb151f7b
 Broadcast - Part 2	d3e7d49b-afb8-4731-b3e4-66567fa70945
 Broadcast - Part 3	846ea6c4-1be7-4fd6-b96b-9087e9deb5d8
 Broadcast - Part 4	16e3b1a4-d0f2-4cae-bd96-8e3d2a0c3362
@@ -825,6 +862,10 @@ Broadcast - Part 5	e672d9cb-62be-4a35-879b-136965775084
 Burning Rubber	b6378ef0-34b9-4d9b-a6e9-51cf38088a58
 Cargo X	51345b07-6afb-4cf8-b2a0-09ec8ebcc89e
 Cease Fire!	5bf9c827-4745-443a-928f-3313d7a69497
+Chemical - Part 1	8eb8ddd9-487a-4a52-9654-dbe8a61fb248
+Chemical - Part 2	c8ee2122-abf9-4dcd-81f6-706bae29583b
+Chemical - Part 4	87395fb1-6c58-40ae-8c22-d93aa5d69a02
+Chemical Experiments	fc3de848-2440-45f9-8677-bdf544eaeac2
 Chemistry Closet	590189e3-e4d9-4b5c-8ed3-67cc9d7e9e77
 Choose Your Friends Wisely	86dcc316-bde8-4dac-ae08-8a9611d706c2
 Chumming	1b9dcefa-cceb-4db2-9c9e-cfafd6775008
@@ -836,14 +877,18 @@ Create a Distraction - Part 1	20743900-2526-466d-a934-a6619d593ed4
 Create a Distraction - Part 2	b1a90346-9dfc-4496-92e6-9df57d2fb791
 Dandies	04163b0d-2703-425f-917a-2eb9cc501f51
 Debtor	5a7ee3c0-470d-4be3-b47b-c433ad90b420
+Decisions, Decisions	89e07218-9d2d-4b01-b9f5-e8cd4ab456bb
 Decontamination Service	3d505558-b609-4e84-b433-277ce84d5c42
+Delivery From the Past	dbb9da2a-19ec-4cdf-b08c-1591540350fd
 Discombobulate	669d1755-d233-4733-aa83-9a9381e8bab4
 District Patrol	21e37587-fb10-49d3-b2e9-9a7ceb0f55b9
 Eagle Eye	c0e95cd6-207e-4f21-bb86-1ec608c30ff0
 Easy Money - Part 1	36ec2e25-1f13-403f-b81e-90f1d25ecf0f
 Escort	bd7c961c-6b94-49a0-a92b-6a83ecec8ed6
+Every Hunter Knows This	237003f1-364d-404f-8a69-f08ec33da3aa
 Fair Price - Part 2	abf9b848-db3c-472a-91f3-68414322a2f6
 Falling Skies	e13dca94-00a7-436d-940c-3193852f616d
+Farming	9ade4e58-0e44-447e-a45f-dc47420e8f44
 First in Line	25c1e79d-ea9e-4976-b1d2-cdbb186c82be
 Fishing Gear	21baa5b8-1584-4d1a-84ba-06e25892eb1f
 Forester's Duty	98cea709-5600-4e15-b41a-c3e5028c120b
@@ -851,6 +896,7 @@ Forge a Friendship	6890d064-73be-45fb-8cbb-375e0f580ae9
 Fuel Crisis	d6c228c0-9bce-453b-bdf7-41320db567b0
 Getting Some Air	6ca009d2-2854-4f66-815b-4a1f91a8cdfe
 Glory to CPSU	07f14f09-2cdd-473e-8c4f-22d2a0fab81b
+Golden Swag	aab967c5-5200-43ee-9bee-22b11710c368
 Gratitude	4e4045b4-689a-438e-9d8e-ebd9dd7584d8
 Green Corridor	14ae210b-6618-4f7e-ae45-ccd39ab3d8ad
 Hangover	edf9a004-a1bb-430e-8e1b-834c0d119509
@@ -860,7 +906,9 @@ Health Care Privacy - Part 3	7c77e208-315e-4f65-bf4f-f028217f16de
 Hidden Layer	75be5907-a84a-4d07-b74f-3999c6f472ee
 Hiking	9c86eb07-10db-45ba-8f9e-4d11a44a7cc4
 Hindsight 20/20	c0de0441-75be-4783-92ae-3ebd8c199337
+Hobby Club	385201a4-843f-48cd-90a9-6591ddf566a5
 Hot Delivery	65ecc5fc-afc5-4d96-a9c2-6b30730f3338
+Hot Wheels	33e73a22-19b5-49ed-a9d3-1aed45569f80
 House Arrest	88f8938b-4abc-4195-aa42-981ef45faacc
 Humanitarian Supplies	1d2cafe9-69f1-4b5c-ac0a-49ef132029e0
 Hunting Trip	6a886aba-7d1b-41bb-9bff-1da1036d46f7
@@ -895,19 +943,26 @@ No Swiping	3151a580-0860-4841-8e4b-04b1af33d42f
 Nostalgia	b0063e12-e426-4b4a-b822-e3d7224d753b
 Nothing Fishy About This	26a7cd10-adfd-40ce-b305-1d4cc944321f
 Offensive Reconnaissance	58f198b6-0116-4882-9d72-f14467fafba1
+Oil Run	9f5dbac9-5159-4f06-833f-cbc48a8f4152
 One Less Loose End	7100ed64-1266-424a-a99d-f1508fca08d8
 One-Way Ticket	b4ab4b44-c9ad-4536-b3b5-a94a72604b2b
+Operation Aquarius	cfcbda30-4ed3-4afd-9aae-dfdac3ae201f
 Order From Outside	207a9854-d93b-49ab-b19b-06d0e8294ca6
+Out of Curiosity	5899943f-04b8-44f2-9540-eb6a3d4a4478
 Paramedic	c5a5382b-4d65-4c2d-b1c0-194cabf1f2a8
+Passion for Ergonomics	17b1332c-7b23-4d39-b4c9-ae4a21a46c5d
 Pathfinder	9a54dc25-33d1-4a73-b5c3-9e778dbd28fe
 Peacekeeping Mission	e8f776db-c1b5-4ea5-a2b8-9aee1bce3e16
 Pets Won't Need It	b773dcee-6de2-41ef-b92a-8abc7ef135e8
+Pharmacist	89ebbfea-9f66-4b40-8e9d-83e127e61ff1
 Polikhim Hobo	52a630e0-12e3-4166-9232-cbd9308731ae
 Population Census	3cfaa13f-f8ef-4be7-a9c5-acdaaad6fa34
 Power of Persuasion	b74aafe6-4bba-4e0e-879f-8bf86fb32e05
+Private Club	2ec2a922-45f9-4aca-b191-62af1d96e09b
 Proper Comeback	634a6aec-d1ef-48ac-b58e-de2fccfab9ff
 Properties All Around	33e6a108-d010-4e40-b7af-e0033d690ff9
 Protect the Sky	798b7686-f97e-4c57-953c-770080784f06
+Provide Viewership	a8ca8cb3-0d8f-45b8-9ee4-dc6575393e04
 Provocation	bd72ebbc-b3fc-4178-9685-c3d5bd124795
 Pyramid Scheme	c71f7472-75f6-464e-b6eb-d4515ede3c66
 Return the Favor	541c3bb6-e792-4434-b55b-42a94097e8b0
@@ -921,11 +976,15 @@ Saving the Mole	b9253692-f2b7-4c9f-a893-221b32be61a3
 Scrap Metal	770cbfd6-4b67-471e-a4c8-84fc5fac5592
 Search Mission	c03cda52-c001-4394-a78c-39ddd038e263
 Secret Message	32ef8486-5db8-4130-b9fd-2683db9de60d
+Secrets of Polikhim	60ef1ba9-d02f-4f54-a8df-81e63f967344
 Seizing the Initiative	b704af98-3a68-4137-9cfb-9df6846bcf4d
 Sensory Analysis - Part 1	00727d25-7a37-4789-8256-dc3026e7320b
 Sensory Analysis - Part 2	96530910-5c51-4432-858e-70d0f3e24b9c
 Serious Allegations	7a941f44-e8d4-44a5-9094-290abb56d940
+Setup	d7e3ba38-b72f-4481-a769-7c456ecfcad8
 Shady Contractor	47a88d58-39c6-4d60-95e2-21bfe8b442d9
+Shaking Up the Teller	485236ae-1ecc-4544-b617-c1d1f963e38b
+Shipment Tracking	2447c688-c6f4-4a1b-8efa-09888f05c817
 Shipping Delay - Part 1	02c4a80f-6d87-4709-ac81-9e3ca77945eb
 Shipping Delay - Part 2	521d34ef-a89f-496c-9374-d0bb86beddc7
 Shooter Born in Heaven	aed327f4-54c9-4a68-9d30-155e9e3b2679
@@ -943,24 +1002,32 @@ Stabilize Business	3e48e1d3-751f-4974-b756-7cc5e6895864
 Steady Signal	6a422f45-9f66-495d-82d8-b35eb2cd5741
 Stray Dogs	3faef5aa-4d3c-4dda-acae-a2612520562b
 Supervisor	4d7104b8-51c7-4f0a-89ac-824a9a7cfe1d
+Supplements	49d85dfa-856c-45ad-bfee-42afc6da7f42
 Supply Plans	eee1e278-de80-4a8f-a400-7bba1ccd213d
+Surprise Gift	76a712e7-5b0a-4ef0-b529-fbdc90f4f52c
 Surveillance	300add62-c464-4dd4-b92a-fa39df6ca586
 Swift	3063f196-15b1-4e64-911e-66558c27a349
 Swift Retribution	2fafb5a9-1e00-47a2-a7ea-2a5cb17776fb
 Tarkov-Style Diplomacy	8c304f00-ee75-4d84-bb75-ed2d4f5271c9
+The Courier	9fb88396-593a-4971-ab97-ff009700d5e3
 The Cult	8d233dbd-0f3f-4332-b1b4-2d830dfd3e2d
 The Delicious Sausage	9abd90d7-c8f8-44cc-86b1-41ef525955c0
 The Door	dc4bef23-c186-4062-884a-3ba7905a6f66
+The Extortionist	c96c50a4-f1f3-4695-9661-df92ab7094ef
 The Guide	de1493d4-17b1-483f-95f8-7ab60aa841a6
 The Higher They Fly	91a33a8d-37a1-42a1-98ed-dbe1a9957079
+The Huntsman Path - Angry Watchman	c95d94df-02f2-4fc4-a4b7-0525f59f589b
 The Huntsman Path - Big Game	6fb7b069-500b-4736-b017-fc8f63495519
 The Huntsman Path - Crooked Cop	e31cec0e-9a20-4142-b831-8edf199f6e45
+The Huntsman Path - Justice	2e94ea7d-93a5-44db-8712-96729096c343
 The Huntsman Path - Sadist	f01e4d20-0be6-4b08-982c-69bd3e569db6
 The Huntsman Path - Sellout	2427f9b6-830c-4ac9-ae7f-30affab8c234
+The Huntsman Path - Trophy	8d9e764e-134e-442a-ad1e-c631aaa39260
 The Huntsman Path - Woods Keeper	68bc6f7d-e249-46ec-9193-ff5c17fe17d4
 The Key to Success	1b1e0530-7ec6-42b9-8992-66630124ceb6
 The Labyrinth	b6bbfa61-5fc2-4666-b2da-8920616a8668
 The Price of Independence	68400a70-c681-42ac-9089-5821cd4d429b
+The Punisher - Part 1	c394638f-3148-4530-85ec-7aac943f9b60
 The Punisher - Part 2	fb16f6c1-2615-498c-aecc-f7e13974542c
 The Punisher - Part 6	6ae7eece-7a78-4f0d-87b6-ded074e6712c
 The Secret Recipe	9f98e2f1-d12b-40bf-99b3-afab496a89a1
@@ -978,11 +1045,14 @@ They Are Already Here	2ae05b1e-efe0-41de-9ed5-d0159dc3d8d8
 Thirsty - Delivery	6ba2edda-1ce5-4143-b420-dd7e3efc7932
 Thirsty - Echo	6ecfbd93-b8ee-4d9b-8e8a-d23d461bc1fc
 Thirsty - Hounds	1a0193bd-19ee-47ff-938d-eb8fbbddc4b1
+Tigr Safari	3be363d2-3553-45a9-9bf7-ce4ed40458ea
 To the Light - Clip Their Wings	373b87d5-da4b-4520-a6f9-5a9d994decb6
+To the Light - False Call	3c832f7d-106f-5fab-9700-e1ede6b4652c
 To the Light - The Other Side	b2d40f96-61d4-471d-adfa-331381efc9e4
 Tour	7a4b72bc-09e8-42cc-b073-03ce5a3e334a
 Tracker	affbd26b-0f61-46bd-bc93-8ae91390c03a
 Trouble in the Big City	73f00136-c264-40fe-9b5a-40111c619e88
+Unique Experience	710f6ca3-3688-4682-ade0-edd21b753871
 Urban Medicine	e5720f8d-a237-45d7-bc69-31c3152c35be
 Viewer	2566c90c-f35e-497f-a5cf-9d08b56aa10d
 Vitamins	9d3a657a-de37-46f7-9f16-d9dc5ac38573
@@ -995,6 +1065,7 @@ Wet Job - Part 4	10ed94ac-b973-4be7-8df3-291b3dcb975c
 Wet Job - Part 5	0ebf7b2e-898e-4f71-b077-3d2be9dc867b
 Wet Job - Part 6	7f464aee-4c18-4bae-9619-0e8e66c73158
 What’s on the Flash Drive?	aa98be01-3a07-4717-b5b1-91adce9ffebf
+Work Smarter	e2b618e3-533f-45ce-acb4-9f524a6a2e4e
 You've Got Mail	3e143ab4-54d0-4ada-830d-7873031920f9
 Your Car Needs a Service	d2ee1492-2aa4-4f5d-ac7b-ff803302aa8a`;
 const tmKey = s => String(s || '').toLowerCase().replace(/\s*\[.*?\]/g, '').replace(/[\u2018\u2019']/g, "'").replace(/\s+/g, ' ').trim();
